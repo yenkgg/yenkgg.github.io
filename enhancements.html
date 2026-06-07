@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unnamed Enhancements — #1 Rivals Script</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue1: #0080FF;
+    --blue2: #00A8FF;
+    --blue3: #00D4FF;
+    --blue4: #1E90FF;
+    --blue5: #4169FF;
+    --blue6: #6495FF;
+    --dark: #080810;
+    --dark2: #0D0D1A;
+    --dark3: #13132A;
+    --glass: rgba(255,255,255,0.03);
+    --glass-b: rgba(255,255,255,0.06);
+    --text: #E8E8F8;
+    --muted: #7777AA;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    width: 10px; height: 10px;
+    background: linear-gradient(135deg, var(--blue1), var(--blue3));
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: screen;
+    transition: width .15s, height .15s;
+    box-shadow: 0 0 12px var(--blue2);
+    animation: blueGlow 2s infinite;
+  }
+  @keyframes blueGlow {
+    0%, 100% { box-shadow: 0 0 12px var(--blue1); }
+    50% { box-shadow: 0 0 20px var(--blue3); }
+  }
+  #cursor-ring {
+    width: 32px; height: 32px;
+    border: 1px solid;
+    border-image: linear-gradient(45deg, var(--blue1), var(--blue3)) 1;
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease-out;
+  }
+  body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 18px; height: 18px; }
+
+  /* BG canvas */
+  canvas#bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.5; }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+  }
+
+  /* Noise texture */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    padding: 1.2rem 3rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(8,8,16,0.95), transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid;
+    border-image: linear-gradient(90deg, var(--blue1), var(--blue3), var(--blue1)) 1;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em;
+    color: #fff; text-decoration: none;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--blue1), var(--blue3));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+    color: #fff; font-weight: 700;
+    box-shadow: 0 0 20px rgba(0, 160, 255, 0.6), 0 0 30px rgba(0, 200, 255, 0.4);
+    border: 1px solid rgba(255,255,255,0.2);
+    letter-spacing: 0.05em;
+  }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 0.95rem;
+    font-weight: 600; transition: color 0.2s; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .nav-links a:hover { color: #fff; }
+  .nav-cta {
+    background: linear-gradient(135deg, var(--blue1), var(--blue4));
+    color: #fff; padding: 0.6rem 1.5rem;
+    border-radius: 12px; text-decoration: none;
+    font-size: 0.85rem; font-weight: 700;
+    box-shadow: 0 0 20px rgba(0, 160, 255, 0.5), 0 0 10px rgba(0, 212, 255, 0.3);
+    transition: box-shadow 0.3s, transform 0.2s;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    font-family: 'Orbitron', sans-serif;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .nav-cta:hover { box-shadow: 0 0 36px rgba(0, 160, 255, 0.8), 0 0 20px rgba(0, 212, 255, 0.6); transform: translateY(-1px); }
+
+  main { position: relative; z-index: 10; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 9rem 2rem 4rem;
+    position: relative;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(0, 160, 255, 0.08); border: 1px solid rgba(0, 160, 255, 0.25);
+    padding: 0.4rem 1.2rem; border-radius: 12px;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--blue2);
+    margin-bottom: 2rem;
+    font-family: 'Share Tech Mono', monospace;
+    animation: fadeUp 0.7s ease both;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: linear-gradient(45deg, var(--blue1), var(--blue3));
+    display: block;
+    animation: blink 1.2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(3rem, 8vw, 7.5rem);
+    font-weight: 900; line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: #fff;
+    animation: fadeUp 0.7s 0.1s ease both;
+    position: relative;
+    text-transform: uppercase;
+  }
+  .hero-title .word-unnamed {
+    display: block;
+    background: linear-gradient(135deg, var(--blue2), var(--blue3));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .hero-title .word-enhancements {
+    display: block;
+    background: linear-gradient(135deg, var(--blue1), var(--blue4));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    filter: drop-shadow(0 0 40px rgba(0, 160, 255, 0.3));
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    color: var(--muted); max-width: 580px;
+    line-height: 1.7; margin: 2rem auto 0;
+    font-weight: 500;
+    animation: fadeUp 0.7s 0.2s ease both;
+    letter-spacing: 0.02em;
+  }
+  .hero-sub strong { color: var(--blue2); }
+  .hero-actions {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.7s 0.3s ease both;
+    margin-top: 2.5rem;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--blue1), var(--blue4));
+    color: #fff; padding: 0.9rem 2.4rem;
+    border-radius: 12px; text-decoration: none;
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: 0 0 32px rgba(0, 160, 255, 0.45), 0 0 16px rgba(0, 212, 255, 0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+    transition: all 0.3s; border: 1px solid rgba(255,255,255,0.2);
+    font-family: 'Orbitron', sans-serif; font-size: 0.75rem;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover { box-shadow: 0 0 52px rgba(0, 160, 255, 0.7), 0 0 24px rgba(0, 212, 255, 0.5); transform: translateY(-2px); }
+  .btn-secondary {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text); padding: 0.9rem 2.4rem;
+    border-radius: 4px; text-decoration: none;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; font-family: 'Orbitron', sans-serif;
+    backdrop-filter: blur(8px); transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-secondary:hover { border-color: rgba(255,34,51,0.4); background: rgba(255,34,51,0.05); }
+
+  /* Screenshot showcase */
+  .showcase {
+    perspective: 1400px;
+    margin: 3rem auto 0;
+    max-width: 900px; padding: 0 2rem 5rem;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+  .showcase-3d {
+    transform: rotateX(14deg) rotateY(-3deg);
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .showcase-3d:hover { transform: rotateX(2deg) rotateY(0deg); }
+  .showcase-shadow {
+    position: absolute; bottom: -30px; left: 15%; right: 15%;
+    height: 50px;
+    background: radial-gradient(ellipse, rgba(255,34,51,0.35) 0%, transparent 70%);
+    filter: blur(18px); z-index: -1;
+  }
+  .showcase-frame {
+    border-radius: 20px; overflow: hidden;
+    border: 1px solid;
+    border-image: linear-gradient(135deg, var(--blue1), var(--blue3)) 1;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04),
+                0 0 60px rgba(0, 160, 255, 0.1), 0 0 40px rgba(0, 160, 255, 0.1);
+    position: relative;
+  }
+  .showcase-frame::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px; z-index: 3;
+    background: linear-gradient(90deg, var(--blue1), var(--blue2), var(--blue3));
+  }
+  .showcase-frame::after {
+    content: '';
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: linear-gradient(to bottom, transparent 60%, rgba(8,8,16,0.6) 100%);
+  }
+  .showcase-img {
+    display: block; width: 100%; height: auto;
+    vertical-align: bottom; filter: saturate(1.1) contrast(1.05);
+  }
+  .showcase-label {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    z-index: 4;
+    background: rgba(8,8,16,0.9); border: 1px solid rgba(0,229,255,0.3);
+    padding: 0.35rem 1.2rem; border-radius: 100px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+    color: var(--cyan); letter-spacing: 0.15em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* FEATURES */
+  .features {
+    padding: 7rem 2rem;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 0.8rem;
+  }
+  .section-title {
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    font-weight: 800; letter-spacing: -0.01em;
+    color: #fff; margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+  .section-sub {
+    text-align: center;
+    color: var(--muted); max-width: 500px;
+    margin: 0 auto 4rem; line-height: 1.7;
+    font-size: 1rem; font-weight: 500;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: linear-gradient(135deg, rgba(255,23,68,0.08), rgba(0,229,255,0.08));
+    border-radius: 8px; overflow: hidden;
+    border: 1px solid;
+    border-image: linear-gradient(135deg, var(--red), var(--cyan), var(--purple)) 1;
+  }
+  .feature-card {
+    background: var(--dark2);
+    padding: 2.5rem 2rem;
+    transition: background 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .feature-card::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--blue), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature-card:hover { background: rgba(20,10,14,0.95); }
+  .feature-card:hover::after { opacity: 1; }
+  .feature-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, rgba(255,23,68,0.15), rgba(0,229,255,0.15));
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 6px; margin-bottom: 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+  }
+  .feature-card:hover .feature-icon { background: linear-gradient(135deg, rgba(255,23,68,0.25), rgba(0,229,255,0.25)); box-shadow: 0 0 20px rgba(0,229,255,0.3), 0 0 10px rgba(255,23,68,0.2); }
+  .feature-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem; font-weight: 700; color: #fff;
+    margin-bottom: 0.6rem; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .feature-desc { font-size: 0.95rem; color: var(--muted); line-height: 1.6; font-weight: 500; }
+
+  /* PRODUCT CARD */
+  .product-section {
+    padding: 5rem 2rem;
+    max-width: 900px; margin: 0 auto;
+  }
+  .product-card {
+    background: linear-gradient(135deg, rgba(255,23,68,0.06), rgba(0,229,255,0.06));
+    border: 1px solid;
+    border-image: linear-gradient(135deg, var(--red), var(--cyan), var(--purple)) 1;
+    border-radius: 12px; padding: 3.5rem;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 3rem; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .product-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--yellow), var(--green), var(--cyan), var(--blue), var(--purple));
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .product-badge {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+    color: var(--cyan); letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 0.8rem; display: flex; align-items: center; gap: 6px;
+  }
+  .product-badge::before { content: ''; width: 20px; height: 1px; background: var(--cyan); display: block; }
+  .product-name {
+    font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900;
+    color: #fff; text-transform: uppercase; letter-spacing: -0.02em;
+    margin-bottom: 0.4rem; line-height: 1;
+  }
+  .product-sub { color: var(--muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.8rem; }
+  .product-features { list-style: none; margin-bottom: 2rem; }
+  .product-features li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0.5rem 0; color: var(--text); font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-weight: 500;
+  }
+  .product-features li::before { content: '▸'; color: var(--cyan); font-size: 0.7rem; }
+  .product-price-box {
+    background: linear-gradient(135deg, rgba(255,23,68,0.05), rgba(0,229,255,0.05));
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 8px; padding: 2rem;
+    text-align: center;
+    position: relative;
+  }
+  .price-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3.5rem; font-weight: 900; color: #fff;
+    letter-spacing: -0.04em; line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .price-tag sup { font-size: 1.5rem; vertical-align: super; }
+  .price-type {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem; color: var(--cyan); letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 1.5rem;
+  }
+  .price-cta {
+    display: block; width: 100%;
+    background: linear-gradient(135deg, var(--red), var(--orange), var(--yellow), var(--green), var(--cyan), var(--blue), var(--purple));
+    color: #fff; padding: 0.9rem;
+    border-radius: 4px; text-decoration: none;
+    font-family: 'Orbitron', sans-serif; font-size: 0.75rem;
+    font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    box-shadow: 0 0 24px rgba(255,23,68,0.4), 0 0 12px rgba(0,229,255,0.2);
+    transition: all 0.3s; text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 1rem;
+  }
+  .price-cta:hover { box-shadow: 0 0 40px rgba(255,23,68,0.7), 0 0 20px rgba(0,229,255,0.4); transform: translateY(-2px); }
+  .price-discord {
+    display: block; width: 100%;
+    background: rgba(88,101,242,0.12); border: 1px solid rgba(88,101,242,0.25);
+    color: #8899FF; padding: 0.75rem;
+    border-radius: 4px; text-decoration: none;
+    font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: all 0.3s; text-align: center;
+  }
+  .price-discord:hover { background: rgba(88,101,242,0.2); }
+  .price-note {
+    margin-top: 1rem; font-size: 0.75rem; color: var(--muted);
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 0.03em;
+  }
+
+  /* VOLT UPSELL */
+  .volt-section {
+    padding: 3rem 2rem;
+    max-width: 900px; margin: 0 auto;
+  }
+  .volt-card {
+    background: linear-gradient(135deg, rgba(0,229,255,0.06), rgba(213,0,249,0.06));
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 8px; padding: 2rem 2.5rem;
+    display: flex; align-items: center; gap: 2rem;
+    position: relative; overflow: hidden;
+  }
+  .volt-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--blue), transparent);
+  }
+  .volt-icon {
+    font-size: 2.5rem; flex-shrink: 0;
+    filter: drop-shadow(0 0 16px var(--cyan));
+  }
+  .volt-text { flex: 1; }
+  .volt-text h3 {
+    font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700;
+    color: #fff; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .volt-text p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+  .volt-text a { color: var(--cyan); text-decoration: none; font-weight: 600; }
+  .volt-text a:hover { text-decoration: underline; }
+  .volt-btn {
+    background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(213,0,249,0.15));
+    border: 1px solid rgba(0,229,255,0.3);
+    color: var(--cyan); padding: 0.6rem 1.4rem;
+    border-radius: 4px; text-decoration: none;
+    font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+    font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    white-space: nowrap; transition: all 0.3s; flex-shrink: 0;
+  }
+  .volt-btn:hover { background: rgba(0,229,255,0.25); box-shadow: 0 0 20px rgba(0,229,255,0.4), 0 0 10px rgba(213,0,249,0.3); }
+
+  /* DISCORD CTA */
+  .cta-section {
+    padding: 6rem 2rem 8rem;
+    text-align: center;
+  }
+  .cta-card {
+    max-width: 680px; margin: 0 auto;
+    background: linear-gradient(135deg, rgba(255,23,68,0.07), rgba(0,0,0,0));
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 12px; padding: 4rem 3rem;
+    position: relative; overflow: hidden;
+  }
+  .cta-card::before {
+    content: '';
+    position: absolute; bottom: -60px; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 200px;
+    background: radial-gradient(ellipse, rgba(0,229,255,0.12), transparent 70%);
+    pointer-events: none;
+  }
+  .cta-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.4rem; font-weight: 900; color: #fff;
+    letter-spacing: -0.02em; margin-bottom: 1rem; text-transform: uppercase;
+  }
+  .cta-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2.5rem; line-height: 1.6; }
+  .discord-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: #5865F2; color: #fff;
+    padding: 1rem 2.5rem; border-radius: 4px;
+    text-decoration: none;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    box-shadow: 0 0 32px rgba(88,101,242,0.5);
+    transition: all 0.3s;
+  }
+  .discord-btn:hover { box-shadow: 0 0 52px rgba(88,101,242,0.8); transform: translateY(-3px); }
+
+  /* TERMS MODAL */
+  .tos-trigger {
+    margin-top: 1.5rem; font-size: 0.78rem; color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .tos-trigger a { color: rgba(255,34,51,0.7); text-decoration: underline; cursor: none; transition: color 0.2s; }
+  .tos-trigger a:hover { color: var(--red); }
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    padding: 2rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--dark2);
+    border: 1px solid rgba(255,34,51,0.2);
+    border-radius: 12px; padding: 2.5rem;
+    max-width: 680px; width: 100%;
+    max-height: 80vh; overflow-y: auto;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .modal::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--yellow), var(--green), var(--cyan), var(--blue), var(--purple));
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.2);
+    color: var(--cyan); width: 32px; height: 32px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: none; font-size: 1rem; transition: all 0.2s; font-weight: 700;
+  }
+  .modal-close:hover { background: rgba(0,229,255,0.2); }
+  .modal h2 {
+    font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 800;
+    color: #fff; text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+  }
+  .modal-date {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+    color: var(--muted); letter-spacing: 0.1em; margin-bottom: 1.5rem;
+    padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .modal h3 {
+    font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700;
+    color: var(--cyan); text-transform: uppercase; letter-spacing: 0.1em;
+    margin: 1.2rem 0 0.5rem;
+  }
+  .modal p, .modal li {
+    color: var(--muted); font-size: 0.9rem; line-height: 1.7; font-weight: 500;
+  }
+  .modal ul { padding-left: 1.2rem; }
+  .modal ul li { margin-bottom: 0.3rem; }
+  .modal strong { color: var(--cyan); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid;
+    border-image: linear-gradient(90deg, var(--red), var(--cyan), var(--purple)) 1;
+    padding: 2rem 3rem;
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--muted); font-size: 0.82rem; position: relative; z-index: 10;
+  }
+  .footer-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Orbitron', sans-serif; font-size: 0.8rem;
+    font-weight: 700; color: var(--text); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .footer-hex {
+    width: 24px; height: 24px; background: linear-gradient(135deg, var(--red), var(--orange), var(--yellow), var(--green), var(--cyan), var(--blue), var(--purple));
+    border-radius: 3px;
+  }
+  .footer-links { display: flex; gap: 2rem; }
+  .footer-links a { color: var(--muted); text-decoration: none; transition: color 0.2s; font-weight: 500; }
+  .footer-links a:hover { color: var(--text); }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,34,51,0.35); border-radius: 2px; }
+
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .product-card { grid-template-columns: 1fr; }
+    .volt-card { flex-direction: column; text-align: center; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="bg"></canvas>
+
+<!-- Terms Modal -->
+<div class="modal-overlay" id="tosModal">
+  <div class="modal">
+    <button class="modal-close" id="closeModal">✕</button>
+    <h2>Terms of Service</h2>
+    <div class="modal-date">Last updated: 6/7/2026</div>
+
+    <h3>1. Agreement to Terms</h3>
+    <p>By accessing our website, you agree to be bound by these Terms of Service and to comply with all applicable laws and regulations.</p>
+
+    <h3>2. Use License</h3>
+    <p>Permission is granted to temporarily download one copy of the materials on our website for personal, non-commercial transitory viewing only.</p>
+
+    <h3>3. Disclaimer</h3>
+    <p>The materials on our website are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby disclaim all warranties including, without limitation, implied warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
+
+    <h3>4. Limitations</h3>
+    <p>In no event shall we or our suppliers be liable for any damages (including, without limitation, damages for loss of data, profit, or business interruption) arising from the use or inability to use our materials or services.</p>
+
+    <h3>5. Rules & Enforcement</h3>
+    <p style="color:var(--red2);margin-bottom:0.5rem;font-size:0.8rem;">RULES ARE SUBJECT TO CHANGE AT ANY TIME WITHOUT PRIOR NOTICE</p>
+    <ul>
+      <li>Sharing your key will result in a <strong>blacklist</strong>.</li>
+      <li>Any attempt to crack, reverse-engineer, or bypass protections will result in a <strong>blacklist</strong>.</li>
+      <li>Scamming in any form leads to an instant <strong>blacklist</strong>. Reselling is considered scamming.</li>
+      <li>Chargebacks are not tolerated — filing one will result in a <strong>blacklist</strong>.</li>
+      <li>If your account is terminated, we may offer a one-time whitelist transfer. A second termination will result in no further transfers.</li>
+      <li>Claiming authorship over the product will result in a <strong>blacklist</strong>.</li>
+      <li>We reserve the right to revoke your key at any time, for any reason.</li>
+    </ul>
+
+    <h3>6. Service Availability & Risk</h3>
+    <p>We reserve the right to discontinue or modify our service at any time without notice. We do not guarantee uninterrupted availability, security, or that use of the service will be free from consequences such as account restrictions or bans imposed by third parties. <strong>Use of the service is at your own risk.</strong></p>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="logo-icon">UE</div>
+    Unnamed
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#product">Get Key</a></li>
+    <li><a href="https://discord.gg/enhancements">Discord</a></li>
+    <li><a href="#" id="tosNavLink">ToS</a></li>
+  </ul>
+  <a href="https://discord.gg/enhancements" class="nav-cta">Join Discord →</a>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Rivals Script · discord.gg/enhancements</div>
+  <h1 class="hero-title">
+    <span class="word-unnamed">Unnamed</span>
+    <span class="word-enhancements">Enhancements</span>
+  </h1>
+  <p class="hero-sub">
+    The <strong>#1 Rivals script</strong> — packed with silent aim, triggerbot, ragebot, and full weapon control. Only <strong style="color:var(--acid);font-weight:700">$15.99</strong> for lifetime access. Redeem instantly on our Discord.
+  </p>
+  <div class="hero-actions">
+    <a href="#product" class="btn-primary">
+      <span>⚡</span> Get Lifetime Access
+    </a>
+    <a href="https://discord.gg/enhancements" class="btn-secondary">
+      <span>💬</span> Join Discord
+    </a>
+  </div>
+
+  <!-- Screenshot showcase -->
+  <div class="showcase">
+    <div class="showcase-3d" id="showcase3d">
+      <div class="showcase-shadow"></div>
+      <div class="showcase-frame">
+        <img src="1000005469.jpg" alt="Unnamed Enhancements - Rivals Script Interface" class="showcase-img" id="mainScreenshot">
+        <div class="showcase-label">UNNAMED ENHANCEMENTS · RIVALS · discord.gg/enhancements</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features reveal" id="features">
+  <p class="section-label">// Core Capabilities</p>
+  <h2 class="section-title">Built to Dominate</h2>
+  <p class="section-sub">Every feature engineered for maximum precision and performance in Rivals.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-name">Silent Aim</div>
+      <p class="feature-desc">Advanced silent aim with lerp controls, FOV settings, hit chance configuration, and full manipulation support.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-name">Triggerbot</div>
+      <p class="feature-desc">Precision triggerbot with configurable reaction time, shoot delay, forget time, and max distance controls.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔥</div>
+      <div class="feature-name">Ragebot</div>
+      <p class="feature-desc">Full ragebot with void spam, customizable hide/attack timing, shoot attempts, and priority targeting system.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔫</div>
+      <div class="feature-name">Weapon Control</div>
+      <p class="feature-desc">No spread, full auto, always backstab, firerate control, preferred weapon switching — complete arsenal mastery.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👁️</div>
+      <div class="feature-name">ESP & Visuals</div>
+      <p class="feature-desc">Player ESP with configurable outlines, fill modes, and advanced targeting filters including riot shield and katana awareness.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-name">Smart Targeting</div>
+      <p class="feature-desc">Visible-only filtering, ignore protected, disable on flash, part blacklisting, and closest part prioritization.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCT CARD -->
+<section class="product-section reveal" id="product">
+  <div class="product-card">
+    <div>
+      <div class="product-badge">Unnamed Enhancements</div>
+      <div class="product-name">Rivals<br>Script Key</div>
+      <p class="product-sub">Lifetime access key, instantly redeemable in our Discord server. No subscriptions, no renewals — pay once, own it forever.</p>
+      <ul class="product-features">
+        <li>Lifetime key — never expires</li>
+        <li>Instant redemption via Discord</li>
+        <li>All features included at launch</li>
+        <li>Discord community & support</li>
+        <li>Future update access</li>
+      </ul>
+      <p style="font-size:0.78rem;color:var(--muted);font-family:'Share Tech Mono',monospace">By purchasing, you accept our <a href="#" class="tos-link" style="color:rgba(255,34,51,0.7);text-decoration:underline">Terms of Service</a></p>
+    </div>
+    <div class="product-price-box">
+      <div class="price-tag"><sup>$</sup>15.99</div>
+      <div class="price-type">one-time · lifetime access</div>
+      <a href="https://discord.gg/enhancements" class="price-cta">Purchase on Discord →</a>
+      <a href="https://discord.gg/enhancements" class="price-discord">💬 discord.gg/enhancements</a>
+      <p class="price-note">Key delivered instantly after payment</p>
+    </div>
+  </div>
+</section>
+
+<!-- VOLT UPSELL -->
+<section class="volt-section reveal">
+  <div class="volt-card">
+    <div class="volt-icon">⚡</div>
+    <div class="volt-text">
+      <h3>Also Sold Here: Volt</h3>
+      <p>We recommend using <strong style="color:var(--cyan)">Volt</strong> as your executor. We also sell it here — grab both and get the full experience. <a href="https://discord.gg/enhancements">Ask in Discord</a> for more details.</p>
+    </div>
+    <a href="https://discord.gg/enhancements" class="volt-btn">Get Volt →</a>
+  </div>
+</section>
+
+<!-- DISCORD CTA -->
+<section class="cta-section reveal">
+  <div class="cta-card">
+    <h2 class="cta-title">Ready to Play?</h2>
+    <p class="cta-sub">Join our Discord to purchase, get support, stay updated on new features, and connect with the community.</p>
+    <a href="https://discord.gg/enhancements" class="discord-btn">
+      <svg width="20" height="15" viewBox="0 0 22 16" fill="none"><path d="M18.59 1.34a18.17 18.17 0 0 0-4.49-1.4.07.07 0 0 0-.07.03c-.19.35-.41.8-.56 1.16a16.77 16.77 0 0 0-5.03 0A11.65 11.65 0 0 0 7.88.0a.07.07 0 0 0-.07.03 18.08 18.08 0 0 0-4.5 1.4.06.06 0 0 0-.03.03C.48 5.42-.29 9.4.09 13.33a.07.07 0 0 0 .03.05 18.26 18.26 0 0 0 5.49 2.78.07.07 0 0 0 .08-.03c.42-.58.8-1.19 1.12-1.83a.07.07 0 0 0-.04-.1 12.03 12.03 0 0 1-1.72-.82.07.07 0 0 1-.01-.12l.34-.27a.07.07 0 0 1 .07-.01c3.6 1.65 7.5 1.65 11.06 0a.07.07 0 0 1 .07.01l.34.27a.07.07 0 0 1-.01.12c-.55.32-1.12.59-1.72.82a.07.07 0 0 0-.04.1c.33.64.7 1.25 1.12 1.83a.07.07 0 0 0 .08.03 18.2 18.2 0 0 0 5.5-2.78.07.07 0 0 0 .03-.05c.46-4.73-.77-8.68-3.28-12.26a.05.05 0 0 0-.03-.03zM7.34 10.9c-1.08 0-1.97-.99-1.97-2.22 0-1.22.87-2.22 1.97-2.22 1.11 0 1.99 1.01 1.97 2.22 0 1.23-.87 2.22-1.97 2.22zm7.28 0c-1.08 0-1.97-.99-1.97-2.22 0-1.22.87-2.22 1.97-2.22 1.11 0 1.99 1.01 1.97 2.22 0 1.23-.86 2.22-1.97 2.22z" fill="white"/></svg>
+      Join discord.gg/enhancements
+    </a>
+    <div class="tos-trigger">By purchasing, you accept our <a href="#" id="tosLink">Terms of Service</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-logo">
+    <div class="footer-hex"></div>
+    Unnamed Enhancements
+  </div>
+  <div class="footer-links">
+    <a href="https://discord.gg/enhancements">Discord</a>
+    <a href="#" id="tosFooterLink">Terms of Service</a>
+    <a href="#product">Purchase</a>
+  </div>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:0.68rem">discord.gg/enhancements</span>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
+  function animateRing() {
+    rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Canvas background — grid + particles
+  const canvas = document.getElementById('bg');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  const particles = Array.from({length: 60}, () => ({
+    x: Math.random() * 1920, y: Math.random() * 1080,
+    vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+    r: Math.random() * 2 + 0.5,
+    a: Math.random()
+  }));
+
+  function drawBg(t) {
+    ctx.clearRect(0, 0, W, H);
+    const gridColors = ['#FF1744', '#FF6E40', '#FFD600', '#00E676', '#00E5FF', '#2979F0', '#D500F9'];
+    // Rainbow grid
+    ctx.lineWidth = 1;
+    const gs = 80;
+    for (let x = 0; x < W; x += gs) {
+      const hue = Math.floor((x / W) * gridColors.length) % gridColors.length;
+      ctx.strokeStyle = gridColors[hue] + '0a';
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gs) {
+      const hue = Math.floor((y / H) * gridColors.length) % gridColors.length;
+      ctx.strokeStyle = gridColors[hue] + '0a';
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    // Particles
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      p.a = 0.3 + 0.5 * Math.abs(Math.sin(t * 0.001 + p.x));
+      const hue = gridColors[Math.floor((p.x + p.y) / 200) % gridColors.length];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = hue.replace('#', '') ? 'rgba(' + parseInt(hue.slice(1,3),16) + ',' + parseInt(hue.slice(3,5),16) + ',' + parseInt(hue.slice(5,7),16) + ',' + (p.a * 0.5) + ')' : 'rgba(255,0,255,' + (p.a * 0.5) + ')';
+      ctx.fill();
+    });
+    // Connections
+    ctx.lineWidth = 0.4;
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 140) {
+          const hue = gridColors[Math.floor((particles[i].x + particles[j].x) / 400) % gridColors.length];
+          const alpha = 0.08 * (1 - d/140);
+          ctx.strokeStyle = hue.replace('#', '') ? 'rgba(' + parseInt(hue.slice(1,3),16) + ',' + parseInt(hue.slice(3,5),16) + ',' + parseInt(hue.slice(5,7),16) + ',' + alpha + ')' : 'rgba(0,200,255,' + alpha + ')';
+          ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(drawBg);
+  }
+  requestAnimationFrame(drawBg);
+
+  // 3D tilt on showcase
+  const sc = document.getElementById('showcase3d');
+  document.addEventListener('mousemove', e => {
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    const rx2 = ((e.clientY - cy) / cy) * -6;
+    const ry2 = ((e.clientX - cx) / cx) * 4;
+    sc.style.transform = `rotateX(${14 + rx2}deg) rotateY(${-3 + ry2}deg)`;
+  });
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  revealEls.forEach(el => obs.observe(el));
+
+  // Terms modal
+  const modal = document.getElementById('tosModal');
+  const openLinks = ['tosLink', 'tosNavLink', 'tosFooterLink'];
+  openLinks.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', e => { e.preventDefault(); modal.classList.add('open'); });
+  });
+  document.querySelectorAll('.tos-link').forEach(el => {
+    el.addEventListener('click', e => { e.preventDefault(); modal.classList.add('open'); });
+  });
+  document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('open'); });
+</script>
+</body>
+</html>
