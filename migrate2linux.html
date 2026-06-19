@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Linux Distros // Terminal Node</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(10, 15, 30, 0.85);
+            --border-color: #1e293b;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            
+            /* Futuristic Cyber Glows */
+            --android-neon: #00ff66;
+            --linux-neon: #00ffff;
+            --alert-neon: #ff0055;
+            
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            background-image: url('750311.jpg');
+            background-size: cover;
+            background-position: center top;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.5);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        header {
+            position: relative;
+            padding: 4rem 2rem 2.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--linux-neon), transparent);
+        }
+
+        .back-link {
+            position: absolute;
+            top: 1.5rem;
+            left: 2rem;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--linux-neon);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #ffffff 40%, #64748b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 1rem auto 0;
+            font-family: var(--font-mono);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .distro-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .distro-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .distro-card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 10px;
+            height: 10px;
+            border-top: 2px solid transparent;
+            border-left: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        .distro-card:hover::before {
+            border-color: var(--linux-neon);
+        }
+
+        .distro-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 242, 254, 0.4);
+            box-shadow: 0 10px 25px rgba(0, 242, 254, 0.1);
+        }
+
+        .distro-name {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 2px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+
+        .tag-beginner { background: rgba(0, 255, 102, 0.1); color: var(--android-neon); border: 1px solid rgba(0, 255, 102, 0.2); }
+        .tag-intermediate { background: rgba(0, 242, 254, 0.1); color: var(--linux-neon); border: 1px solid rgba(0, 242, 254, 0.2); }
+        .tag-expert { background: rgba(255, 0, 85, 0.1); color: var(--alert-neon); border: 1px solid rgba(255, 0, 85, 0.2); }
+
+        .distro-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .download-btn {
+            display: block;
+            text-align: center;
+            padding: 0.7rem;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            color: #030712;
+            background: var(--linux-neon);
+            border-radius: 2px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+
+        .distro-card:hover .download-btn {
+            background: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        }
+
+        .terminal-block {
+            background: rgba(3, 7, 18, 0.9);
+            border: 1px dashed var(--border-color);
+            padding: 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #a7f3d0;
+            border-radius: 4px;
+        }
+
+        .terminal-header {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 0.5rem;
+        }
+
+        .line { margin-bottom: 0.4rem; }
+        .cmd { color: var(--linux-neon); }
+
+        footer {
+            background: rgba(3, 7, 18, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            text-align: center;
+            padding: 4rem 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #6b7280;
+            letter-spacing: 1px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .footer-graphic {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- Return button now links securely back to the absolute home path -->
+        <a href="https://yenkgg.github.io/wake-up" class="back-link">&lt; Return to Manifest</a>
+        <h1>Select Your Core Architecture</h1>
+        <p>Choose an operational system distribution file to flash into your terminal matrix node.</p>
+    </header>
+
+    <div class="container">
+        
+        <div class="distro-grid">
+            
+            <!-- Linux Mint -->
+            <div class="distro-card">
+                <div>
+                    <div class="distro-name">Linux Mint <span class="tag tag-beginner">Stable</span></div>
+                    <p class="distro-desc">The optimal target environment for personnel transitioning away from proprietary corporate ecosystems. Clean desktop orientation, lightweight overhead, completely operational straight out of the box.</p>
+                </div>
+                <a href="https://linuxmint.com/download.php" target="_blank" class="download-btn">Get Mint ISO</a>
+            </div>
+
+            <!-- Fedora -->
+            <div class="distro-card">
+                <div>
+                    <div class="distro-name">Fedora OS <span class="tag tag-intermediate">CuttingEdge</span></div>
+                    <p class="distro-desc">Sovereign infrastructure optimized for modern workstations. Implements pure open-source philosophies alongside lightning fast package delivery and containerized utility ecosystems.</p>
+                </div>
+                <a href="https://fedoraproject.org/workstation/download/" target="_blank" class="download-btn">Get Fedora ISO</a>
+            </div>
+
+            <!-- Arch Linux -->
+            <div class="distro-card">
+                <div>
+                    <div class="distro-name">Arch Linux <span class="tag tag-expert">Custom</span></div>
+                    <p class="distro-desc">The ultimate sandbox environment. No preset frameworks. Assemble your custom environment component by component from an absolute blank console prompt. Perfect for hardware absolute control.</p>
+                </div>
+                <a href="https://archlinux.org/download/" target="_blank" class="download-btn">Get Arch ISO</a>
+            </div>
+
+        </div>
+
+        <div class="terminal-block">
+            <div class="terminal-header">// INSTRUCTIONS: SEED SYSTEM OPERATIONAL IMAGE</div>
+            <div class="line"><span class="cmd"># 1. Download your preferred distro above</span></div>
+            <div class="line"><span class="cmd"># 2. Flash to verified USB medium utilizing Rufus or Ventoy</span></div>
+            <div class="line"><span class="cmd"># 3. Interrupt hardware boot sequence (F12 / DEL / F2)</span></div>
+            <div class="line"><span class="cmd"># 4. Disable Secure Boot parameters if conflicting</span></div>
+            <div class="line"><span class="cmd"># 5. Initialize clean deployment over legacy storage partitions</span></div>
+            <div class="line">$ systemctl initialize-freedom --now</div>
+        </div>
+
+    </div>
+
+    <footer>
+        <img src="9070-antisocial.png" alt="Anti Social Club Concept" class="footer-graphic">
+        <p>// VER: 2026.4.19 // LICENSED UNDER THE GNU PUBLIC LICENSE VER 3 // DISCONNECT THE GRID</p>
+    </footer>
+
+</body>
+</html>
