@@ -1,0 +1,30 @@
+I want to build a highly optimized, password-protected personal text/note vault that syncs seamlessly across multiple devices (PC, laptop, and phone). 
+
+Please design and write the complete, clean code for this project based on the architectural concept and requirements below.
+
+### Core Concept: The Decentralized Encrypted Pastebin & Personal Matrix
+This should be an ultra-lightweight, zero-knowledge, text-based environment that serves as a personal scratchpad, configuration bunker, and markdown logger. It must prioritize speed, minimalist terminal aesthetics, and a pure keyboard-driven/CLI-inspired workflow.
+
+### Architectural Requirements:
+
+1. **Client-Side Zero-Knowledge Encryption:**
+   - The UI must open to a clean, minimal password prompt or an interactive terminal login.
+   - Use AES-GCM encryption directly in the browser via the Web Crypto API. 
+   - The master password must never be sent to a server or stored in plain text; it must act purely as the local decryption key. If the password is incorrect, the data remains scrambled ciphertext.
+
+2. **Multi-Device Sync via Flat Files:**
+   - The notes must be stored as flat markdown or JSON files so they are completely portable.
+   - The structure must allow me to securely view/edit notes through a lightweight browser UI on mobile, or pull/decrypt the raw text files directly into a local terminal editor (like Neovim) using a custom script or CLI interaction.
+
+3. **TTY Multiplexer Interface:**
+   - Ditch rich-text bloat for a fast, keyboard-driven layout mimicking a terminal multiplexer (like tmux).
+   - Provide distinct, searchable buffers (e.g., `notes/`, `todo/`, `scratchpad/`).
+   - Implement keyboard-only navigation, fuzzy-finding across files, and instant hotkey saving.
+
+4. **Ephemeral Buffers (Self-Destructing Notes):**
+   - Include a dedicated buffer for volatile data (temporary links, session logs, or transient text).
+   - Allow a customizable Time-To-Live (TTL) timer that completely wipes the block from the encrypted storage after a set duration or a single view.
+
+### Tech Stack Constraints:
+- Keep the frontend incredibly lightweight, fast-loading, and responsive across mobile and desktop.
+- Provide the complete implementation (HTML/JS/CSS) in a clean, self-contained, and production-ready structure. Avoid heavy external frameworks; lean on native APIs and minimal, clean styling.
