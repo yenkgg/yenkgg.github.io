@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZKVault // Connected</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --fg: #00ff00;
+            --fg-dim: #008800;
+            --bg-hl: #1a1a1a;
+            --border: #333;
+            --alert: #ff003c;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; }
+        * { box-sizing: border-box; outline: none; }
+        
+        /* Views */
+        .view { display: none; height: 100%; width: 100%; }
+        .view.active { display: flex; }
+        
+        /* Login & Settings */
+        #login-view, #settings-view { flex-direction: column; align-items: center; justify-content: center; }
+        .prompt { margin-bottom: 20px; font-size: 1.2rem; }
+        input[type="password"], input[type="text"] { 
+            background: transparent; color: var(--fg); border: 1px solid var(--fg-dim); 
+            padding: 10px; font-family: inherit; font-size: 1rem; width: 350px; margin-bottom: 10px;
+        }
+        input[type="password"]:focus, input[type="text"]:focus { border-color: var(--fg); }
+        
+        /* App Layout */
+        #app-view { flex-direction: row; }
+        #sidebar { width: 250px; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        #main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        /* Sidebar Lists */
+        .buffer-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+        .buffer-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .buffer-item:hover, .buffer-item.active { background: var(--bg-hl); }
+        .buffer-item.ephemeral { color: var(--alert); }
+        
+        /* Editor */
+        #editor-header { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-weight: bold; align-items: center;}
+        #editor { flex: 1; background: transparent; color: var(--fg); border: none; padding: 20px; resize: none; font-family: inherit; font-size: 1rem; line-height: 1.4; }
+        
+        /* Status Bar */
+        #status-bar { border-top: 1px solid var(--border); padding: 5px 10px; font-size: 0.8rem; display: flex; justify-content: space-between; color: var(--fg-dim); }
+        
+        button { background: var(--bg); color: var(--fg); border: 1px solid var(--fg-dim); cursor: pointer; font-family: inherit; padding: 5px 10px; }
+        button:hover { background: var(--fg-dim); color: var(--bg); }
+        
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .form-group label { font-size: 0.8rem; color: var(--fg-dim); margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-view" class="view active">
+        <div class="prompt">> INITIALIZE SECURE VAULT</div>
+        <div>
+            <input type="password" id="master-password" autofocus placeholder="Enter master key...">
+        </div>
+        <div id="login-error" style="color: var(--alert); margin-top: 10px; font-size: 0.9rem;"></div>
+        <div style="margin-top: 20px; font-size: 0.8rem; color: var(--fg-dim);">[Press Enter to Unlock/Create]</div>
+    </div>
+
+    <div id="settings-view" class="view">
+        <div class="prompt">> GITHUB SYNC CONFIGURATION</div>
+        <div class="form-group">
+            <label>Personal Access Token (Requires 'repo' scope)</label>
+            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div class="form-group">
+            <label>GitHub Username</label>
+            <input type="text" id="gh-user" placeholder="octocat">
+        </div>
+        <div class="form-group">
+            <label>Repository Name</label>
+            <input type="text" id="gh-repo" placeholder="notes-vault">
+        </div>
+        <div class="form-group">
+            <label>File Path</label>
+            <input type="text" id="gh-path" placeholder="vault_data.txt" value="vault_data.txt">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button onclick="saveSettings()">[Save & Connect]</button>
+            <button onclick="closeSettings()">[Cancel]</button>
+        </div>
+    </div>
+
+    <div id="app-view" class="view">
+        <div id="sidebar">
+            <div style="padding: 10px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between;">
+                <span>BUFFERS</span>
+                <button onclick="openSettings()" style="padding: 0 5px; border: none;">[⚙️]</button>
+            </div>
+            <ul class="buffer-list" id="buffer-list"></ul>
+            <div style="padding: 10px; border-top: 1px solid var(--border);">
+                <input type="text" id="new-buffer-name" placeholder="new_buffer.md" style="width: 100%; padding: 5px; margin-bottom: 5px;">
+                <div style="font-size: 0.8rem;">
+                    <label><input type="checkbox" id="is-ephemeral"> Volatile (1hr TTL)</label>
+                </div>
+            </div>
+        </div>
+        <div id="main">
+            <div id="editor-header">
+                <span id="current-buffer-name">[ No Buffer Selected ]</span>
+                <button id="sync-btn" onclick="syncWithGitHub()">[ 🔄 Sync Pull ]</button>
+            </div>
+            <textarea id="editor" spellcheck="false" disabled></textarea>
+            <div id="status-bar">
+                <span id="status-msg">NORMAL -- Press Ctrl+S to save & push to GitHub</span>
+                <span id="gh-status">OFFLINE</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /** --- CRYPTO ENGINE --- */
+        let vault = {}; 
+        let currentKey = null;
+        let activeBuffer = null;
+        let ghFileSha = null; // Required by GitHub API to update files
+
+        const SALT = new TextEncoder().encode("ZKVaultStaticSalt_ChangeInProd"); 
+        const ITERATIONS = 100000;
+
+        async function deriveKey(password) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), {name: "PBKDF2"}, false, ["deriveKey"]);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: SALT, iterations: ITERATIONS, hash: "SHA-256" },
+                keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function encryptData(data, key) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const enc = new TextEncoder();
+            const ciphertext = await crypto.subtle.encrypt({name: "AES-GCM", iv: iv}, key, enc.encode(JSON.stringify(data)));
+            const payload = new Uint8Array(iv.length + ciphertext.byteLength);
+            payload.set(iv, 0);
+            payload.set(new Uint8Array(ciphertext), iv.length);
+            return btoa(String.fromCharCode.apply(null, payload));
+        }
+
+        async function decryptData(base64Payload, key) {
+            try {
+                const binaryStr = atob(base64Payload);
+                const payload = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) payload[i] = binaryStr.charCodeAt(i);
+                const iv = payload.slice(0, 12);
+                const ciphertext = payload.slice(12);
+                const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: iv}, key, ciphertext);
+                return JSON.parse(new TextDecoder().decode(decrypted));
+            } catch (e) { return null; }
+        }
+
+        /** --- DOM ELEMENTS --- */
+        const els = {
+            loginView: document.getElementById('login-view'),
+            appView: document.getElementById('app-view'),
+            settingsView: document.getElementById('settings-view'),
+            passwordInput: document.getElementById('master-password'),
+            errorMsg: document.getElementById('login-error'),
+            bufferList: document.getElementById('buffer-list'),
+            editor: document.getElementById('editor'),
+            headerName: document.getElementById('current-buffer-name'),
+            statusMsg: document.getElementById('status-msg'),
+            ghStatus: document.getElementById('gh-status'),
+            newBufferName: document.getElementById('new-buffer-name'),
+            isEphemeral: document.getElementById('is-ephemeral')
+        };
+
+        /** --- INITIALIZATION --- */
+        els.passwordInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter' && els.passwordInput.value) {
+                currentKey = await deriveKey(els.passwordInput.value);
+                const storedData = localStorage.getItem('zkvault_data');
+                
+                if (storedData) {
+                    const decrypted = await decryptData(storedData, currentKey);
+                    if (decrypted) {
+                        vault = decrypted;
+                        cleanEphemeral();
+                        bootApp();
+                    } else els.errorMsg.innerText = "[ERROR] Invalid key.";
+                } else {
+                    vault = { "README.md": { content: "# Connected Vault\nVault created. Configure GitHub sync via [⚙️].", ttl: null }};
+                    await saveLocally();
+                    bootApp();
+                }
+            }
+        });
+
+        function bootApp() {
+            switchView(els.appView);
+            els.passwordInput.value = '';
+            checkGitHubConfig();
+            renderSidebar();
+            if (Object.keys(vault).length > 0) loadBuffer(Object.keys(vault)[0]);
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            view.classList.add('active');
+        }
+
+        /** --- UI LOGIC --- */
+        function renderSidebar() {
+            els.bufferList.innerHTML = '';
+            for (let name in vault) {
+                const li = document.createElement('li');
+                li.className = `buffer-item ${vault[name].ttl ? 'ephemeral' : ''} ${name === activeBuffer ? 'active' : ''}`;
+                li.innerHTML = `<span>${name}</span> ${vault[name].ttl ? '[V]' : ''}`;
+                li.onclick = () => loadBuffer(name);
+                els.bufferList.appendChild(li);
+            }
+        }
+
+        function loadBuffer(name) {
+            if (!vault[name]) return;
+            activeBuffer = name;
+            els.headerName.innerText = name;
+            els.editor.value = vault[name].content;
+            els.editor.disabled = false;
+            els.editor.focus();
+            renderSidebar();
+        }
+
+        els.newBufferName.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter' && els.newBufferName.value.trim() !== '') {
+                const name = els.newBufferName.value.trim();
+                vault[name] = { content: "", ttl: els.isEphemeral.checked ? Date.now() + 3600000 : null };
+                els.newBufferName.value = '';
+                els.isEphemeral.checked = false;
+                await saveLocally();
+                renderSidebar();
+                loadBuffer(name);
+            }
+        });
+
+        document.addEventListener('keydown', async (e) => {
+            if (!els.appView.classList.contains('active')) return;
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (activeBuffer) {
+                    vault[activeBuffer].content = els.editor.value;
+                    await saveLocally();
+                    await pushToGitHub();
+                }
+            }
+        });
+
+        function cleanEphemeral() {
+            const now = Date.now();
+            let changed = false;
+            for (let name in vault) {
+                if (vault[name].ttl && now > vault[name].ttl) { delete vault[name]; changed = true; }
+            }
+            if (changed) saveLocally();
+        }
+
+        function setStatus(msg, error=false) {
+            els.statusMsg.innerText = msg;
+            els.statusMsg.style.color = error ? 'var(--alert)' : 'var(--fg-dim)';
+            setTimeout(() => els.statusMsg.innerText = "NORMAL -- Press Ctrl+S to save & push", 4000);
+        }
+
+        async function saveLocally() {
+            const encrypted = await encryptData(vault, currentKey);
+            localStorage.setItem('zkvault_data', encrypted);
+        }
+
+        /** --- GITHUB API ENGINE --- */
+        function getGHConfig() { return JSON.parse(localStorage.getItem('gh_config') || 'null'); }
+        
+        function checkGitHubConfig() {
+            const cfg = getGHConfig();
+            els.ghStatus.innerText = cfg ? `GH: ${cfg.repo}` : "GH: UNCONFIGURED";
+            els.ghStatus.style.color = cfg ? "var(--fg)" : "var(--alert)";
+        }
+
+        function openSettings() {
+            const cfg = getGHConfig() || {};
+            document.getElementById('gh-token').value = cfg.token || '';
+            document.getElementById('gh-user').value = cfg.user || '';
+            document.getElementById('gh-repo').value = cfg.repo || '';
+            document.getElementById('gh-path').value = cfg.path || 'vault.txt';
+            switchView(els.settingsView);
+        }
+
+        function closeSettings() { switchView(els.appView); }
+
+        function saveSettings() {
+            const cfg = {
+                token: document.getElementById('gh-token').value.trim(),
+                user: document.getElementById('gh-user').value.trim(),
+                repo: document.getElementById('gh-repo').value.trim(),
+                path: document.getElementById('gh-path').value.trim()
+            };
+            if(!cfg.token || !cfg.user || !cfg.repo) return alert("Missing fields");
+            localStorage.setItem('gh_config', JSON.stringify(cfg));
+            checkGitHubConfig();
+            closeSettings();
+            syncWithGitHub();
+        }
+
+        async function githubFetch(method, body = null) {
+            const cfg = getGHConfig();
+            if (!cfg) throw new Error("GitHub not configured");
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}`;
+            const headers = {
+                "Authorization": `Bearer ${cfg.token}`,
+                "Accept": "application/vnd.github.v3+json",
+                "Content-Type": "application/json"
+            };
+            const req = { method, headers };
+            if (body) req.body = JSON.stringify(body);
+            
+            const res = await fetch(url, req);
+            if (res.status === 404 && method === 'GET') return null; // File doesn't exist yet
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        }
+
+        async function syncWithGitHub() {
+            try {
+                setStatus("Fetching from origin...");
+                const data = await githubFetch('GET');
+                if (!data) {
+                    setStatus("No remote file found. Ready to push.");
+                    return;
+                }
+                ghFileSha = data.sha;
+                
+                // GitHub API returns Base64. Decode it to get our raw encrypted string
+                const remoteEncryptedStr = atob(data.content.replace(/\n/g, ''));
+                const decrypted = await decryptData(remoteEncryptedStr, currentKey);
+                
+                if (decrypted) {
+                    vault = decrypted;
+                    await saveLocally();
+                    cleanEphemeral();
+                    renderSidebar();
+                    if(activeBuffer && vault[activeBuffer]) loadBuffer(activeBuffer);
+                    setStatus("Sync complete. State updated.");
+                } else {
+                    setStatus("[FATAL] Remote data failed to decrypt.", true);
+                }
+            } catch (err) {
+                setStatus(`[ERR] ${err.message}`, true);
+            }
+        }
+
+        async function pushToGitHub() {
+            try {
+                setStatus("Encrypting and pushing...");
+                // Always fetch first to get the latest SHA, preventing merge conflicts
+                const currentRemote = await githubFetch('GET').catch(() => null);
+                ghFileSha = currentRemote ? currentRemote.sha : null;
+
+                const encryptedStr = await encryptData(vault, currentKey);
+                // GitHub API requires the content to be base64 encoded
+                const b64Content = btoa(encryptedStr);
+
+                await githubFetch('PUT', {
+                    message: `Auto-sync: ${new Date().toISOString()}`,
+                    content: b64Content,
+                    sha: ghFileSha
+                });
+                setStatus("Successfully pushed to GitHub.");
+            } catch (err) {
+                setStatus(`[ERR PUSH] ${err.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
