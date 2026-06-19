@@ -3,439 +3,628 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>yenkgg — projects</title>
+<title>whoami — about me</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --dim:  #0D0D14;
-    --dim2: #12121C;
-    --dim3: #1A1A2E;
-    --glass: rgba(255,255,255,0.04);
-    --glass-border: rgba(255,255,255,0.08);
-    --text: #E8E8F0;
-    --muted: #8888AA;
-
-    /* Volt — purple */
-    --volt:  #7B61FF;
-    --volt2: #A78BFA;
-    --volt3: #C4B5FD;
-    --volt-glow: rgba(123,97,255,0.55);
-
-    /* Potassium — rose */
-    --pot:   #FF6190;
-    --pot2:  #FF92AD;
-    --pot3:  #FFC0CE;
-    --pot-glow: rgba(255,97,144,0.55);
-
-    /* Unnamed — rainbow anchor for grid */
-    --rb1: #FF6190;
-    --rb2: #FFA94D;
-    --rb3: #FFE94D;
-    --rb4: #4DFFA0;
-    --rb5: #4DB8FF;
-    --rb6: #A04DFF;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--dim);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    overflow-x: hidden;
-    cursor: none;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  :root{
+    --bg-void:#0b0e1a;
+    --bg-panel:#12172a;
+    --bg-panel-2:#161c33;
+    --accent-cyan:#5eead4;
+    --accent-magenta:#f472b6;
+    --accent-amber:#fbbf24;
+    --text-primary:#e2e8f7;
+    --text-dim:#6b7394;
+    --border-line:#232a45;
+    --mono:'JetBrains Mono', monospace;
+    --display:'Space Grotesk', sans-serif;
+    --body:'Inter', sans-serif;
   }
 
-  /* Custom cursor */
-  #cursor {
-    width: 12px; height: 12px;
-    background: #fff;
-    border-radius: 50%;
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: width 0.2s, height 0.2s, background 0.2s;
-    mix-blend-mode: screen;
-  }
-  #cursor-ring {
-    width: 36px; height: 36px;
-    border: 1px solid rgba(123,97,255,0.5);
-    border-radius: 50%;
-    position: fixed;
-    pointer-events: none;
-    z-index: 9998;
-    transform: translate(-50%, -50%);
-    transition: width 0.2s, height 0.2s;
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html,body{
+    height:100%;
+    background:var(--bg-void);
+    color:var(--text-primary);
+    font-family:var(--body);
+    -webkit-font-smoothing:antialiased;
   }
 
-  /* Canvas */
-  canvas#bg {
-    position: fixed; inset: 0;
-    width: 100%; height: 100%;
-    z-index: 0;
-    opacity: 0.7;
+  body{
+    background-image:
+      radial-gradient(ellipse 60% 50% at 12% 8%, rgba(94,234,212,0.10), transparent 60%),
+      radial-gradient(ellipse 55% 45% at 92% 88%, rgba(244,114,182,0.08), transparent 60%),
+      radial-gradient(ellipse 80% 80% at 50% 50%, #0d1224, var(--bg-void) 70%);
+    overflow:hidden;
   }
 
-  /* Floating hexagons */
-  .hex-field {
-    position: fixed; inset: 0; z-index: 1;
-    pointer-events: none;
-    perspective: 1200px;
-    transform-style: preserve-3d;
-  }
-  .hex {
-    position: absolute;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    animation: floatHex var(--dur) ease-in-out infinite;
-    animation-delay: var(--delay);
-    filter: blur(0.5px);
-  }
-  @keyframes floatHex {
-    0%,100% { transform: rotateX(var(--rx)) rotateY(var(--ry)) translateY(0); opacity: var(--op); }
-    50%      { transform: rotateX(calc(var(--rx)+8deg)) rotateY(calc(var(--ry)+5deg)) translateY(-20px); opacity: calc(var(--op)*0.5); }
+  /* scanline overlay */
+  .scan{
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode:overlay;
   }
 
-  /* Main wrapper */
-  main {
-    position: relative; z-index: 10;
-    width: 100%; max-width: 680px;
-    padding: 5rem 2rem 4rem;
-    display: flex; flex-direction: column;
-    align-items: center;
-    gap: 3.5rem;
+  a{color:var(--accent-cyan); text-decoration:none;}
+
+  button:focus-visible, a:focus-visible{
+    outline:2px solid var(--accent-cyan);
+    outline-offset:2px;
+    border-radius:2px;
   }
 
-  /* Hero */
-  .hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 0.4rem 1rem; border-radius: 100px;
-    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--muted);
-    animation: fadeUp 0.8s ease both;
-  }
-  .hero-tag::before {
-    content: ''; width: 6px; height: 6px; border-radius: 50%;
-    display: block; animation: pulse 2s infinite;
-    background: conic-gradient(from 0deg, var(--rb1), var(--rb3), var(--rb4), var(--rb5), var(--rb6), var(--rb1));
-    box-shadow: 0 0 8px rgba(255,255,255,0.5);
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-
-  .hero-title {
-    font-size: clamp(3.8rem, 10vw, 7.5rem);
-    font-weight: 800; line-height: 0.92;
-    letter-spacing: -0.04em; color: #fff;
-    animation: fadeUp 0.8s 0.1s ease both;
-  }
-  .hero-title .grad {
-    background: linear-gradient(120deg, var(--pot2) 0%, var(--volt2) 50%, var(--rb4) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 40px rgba(167,139,250,0.4));
+  /* ---------- layout shell ---------- */
+  .desktop{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
   }
 
-  .hero-sub {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.88rem; color: var(--muted);
-    line-height: 1.8; max-width: 42ch;
-    animation: fadeUp 0.8s 0.2s ease both;
+  /* ---------- top status bar ---------- */
+  .bar{
+    height:46px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 16px;
+    background:rgba(18,23,42,0.85);
+    border-bottom:1px solid var(--border-line);
+    font-family:var(--mono);
+    font-size:12.5px;
+    backdrop-filter:blur(6px);
   }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .workspaces{display:flex; gap:4px;}
+
+  .ws-btn{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text-dim);
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:6px 10px;
+    border-radius:4px;
+    cursor:pointer;
+    display:flex;
+    gap:6px;
+    align-items:baseline;
+    transition:color .15s, background .15s, border-color .15s;
+  }
+  .ws-btn span{letter-spacing:.02em;}
+  .ws-btn:hover{color:var(--text-primary); background:rgba(94,234,212,0.06);}
+  .ws-btn[aria-selected="true"]{
+    color:var(--bg-void);
+    background:var(--accent-cyan);
+    border-color:var(--accent-cyan);
+    font-weight:600;
   }
 
-  /* Cards */
-  .cards {
-    width: 100%;
-    display: flex; flex-direction: column;
-    gap: 1.1rem;
-    animation: fadeUp 0.8s 0.3s ease both;
+  .bar-right{display:flex; align-items:center; gap:14px; color:var(--text-dim);}
+  .status-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--accent-cyan);
+    box-shadow:0 0 6px var(--accent-cyan);
+    display:inline-block;
+    margin-right:6px;
+  }
+  .clock{color:var(--text-primary); min-width:64px; text-align:right;}
+
+  /* ---------- main screen / workspaces ---------- */
+  .screen{
+    flex:1 1 auto;
+    overflow:hidden;
+    padding:16px;
   }
 
-  .card {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 1.8rem;
-    border-radius: 16px;
-    border: 1px solid var(--glass-border);
-    background: var(--glass);
-    text-decoration: none; color: var(--text);
-    position: relative; overflow: hidden;
-    cursor: none;
-    transition: border-color 0.25s, transform 0.25s;
-    backdrop-filter: blur(4px);
+  .ws-panel{height:100%;}
+
+  .grid{height:100%; display:grid; gap:14px;}
+  .grid-about{grid-template-columns:1.15fr 1fr;}
+  .col-stack{display:grid; grid-template-rows:1fr 1fr; gap:14px; height:100%; min-height:0;}
+  .grid-cards{grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;}
+
+  /* ---------- window chrome ---------- */
+  .win{
+    background:var(--bg-panel);
+    border:1px solid var(--border-line);
+    border-radius:8px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
   }
 
-  /* glow bleed on the left edge */
-  .card::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px;
-    border-radius: 16px 0 0 16px;
-    opacity: 0; transition: opacity 0.3s;
-  }
-  /* inner bg shimmer */
-  .card::after {
-    content: '';
-    position: absolute; inset: 0;
-    opacity: 0; transition: opacity 0.3s;
-    pointer-events: none;
+  .win-titlebar{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    background:var(--bg-panel-2);
+    border-bottom:1px solid var(--border-line);
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--text-dim);
+    letter-spacing:.02em;
   }
 
-  .card:hover { transform: translateX(6px); }
-  .card:hover::before { opacity: 1; }
-  .card:hover::after  { opacity: 1; }
+  .dots{display:flex; gap:5px; flex:0 0 auto;}
+  .dots span{width:8px; height:8px; border-radius:50%; display:block;}
+  .dots span:nth-child(1){background:var(--accent-magenta);}
+  .dots span:nth-child(2){background:var(--accent-amber);}
+  .dots span:nth-child(3){background:var(--accent-cyan);}
 
-  /* Volt — purple */
-  .card-volt::before { background: var(--volt2); box-shadow: 0 0 16px var(--volt-glow); }
-  .card-volt::after  { background: radial-gradient(ellipse at 0% 50%, rgba(123,97,255,0.1) 0%, transparent 65%); }
-  .card-volt:hover   { border-color: rgba(123,97,255,0.45); box-shadow: 0 0 32px rgba(123,97,255,0.15); }
-
-  /* Potassium — rose */
-  .card-pot::before  { background: var(--pot2); box-shadow: 0 0 16px var(--pot-glow); }
-  .card-pot::after   { background: radial-gradient(ellipse at 0% 50%, rgba(255,97,144,0.1) 0%, transparent 65%); }
-  .card-pot:hover    { border-color: rgba(255,97,144,0.45); box-shadow: 0 0 32px rgba(255,97,144,0.15); }
-
-  /* Unnamed — rainbow */
-  .card-rb::before {
-    background: linear-gradient(to bottom, var(--rb1), var(--rb2), var(--rb3), var(--rb4), var(--rb5), var(--rb6));
-    box-shadow: 0 0 20px rgba(255,255,255,0.15);
-  }
-  .card-rb::after { background: radial-gradient(ellipse at 0% 50%, rgba(255,200,255,0.07) 0%, transparent 65%); }
-  .card-rb:hover  { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 32px rgba(200,150,255,0.12); }
-
-  .card-left  { display: flex; flex-direction: column; gap: 0.35rem; }
-  .card-num   { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; color: var(--muted); }
-  .card-name  { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
-
-  .card-volt .card-name { color: var(--volt3); text-shadow: 0 0 24px var(--volt-glow); }
-  .card-pot  .card-name { color: var(--pot3);  text-shadow: 0 0 24px var(--pot-glow); }
-  .card-rb   .card-name {
-    background: linear-gradient(90deg, var(--rb1), var(--rb3), var(--rb4), var(--rb5), var(--rb6));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 12px rgba(255,255,255,0.2));
+  .win-body{
+    flex:1 1 auto;
+    overflow:auto;
+    padding:18px 20px;
   }
 
-  .card-url {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem; color: var(--muted); font-style: italic;
+  .win-body::-webkit-scrollbar{width:8px;}
+  .win-body::-webkit-scrollbar-thumb{background:var(--border-line); border-radius:4px;}
+
+  /* ---------- README / about prose ---------- */
+  .readme p{
+    font-family:var(--body);
+    font-size:14.5px;
+    line-height:1.75;
+    color:var(--text-primary);
+    margin-bottom:14px;
+  }
+  .readme p:last-child{margin-bottom:0;}
+  .readme .tag-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;}
+  .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--accent-magenta);
+    border:1px solid rgba(244,114,182,0.35);
+    background:rgba(244,114,182,0.07);
+    padding:3px 8px;
+    border-radius:20px;
   }
 
-  .card-arrow {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    border: 1px solid var(--glass-border);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: background 0.25s, border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+  /* ---------- terminal ---------- */
+  .term-body{font-family:var(--mono); font-size:13px; line-height:1.85;}
+  .term-line{color:var(--text-dim);}
+  .term-line .p{color:var(--accent-cyan);}
+  .term-out{color:var(--text-primary);}
+  .term-banner{
+    font-family:var(--display);
+    font-weight:600;
+    font-size:15px;
+    color:var(--accent-cyan);
+    margin:4px 0 10px;
   }
-  .card:hover .card-arrow { transform: translate(2px, -2px); }
-  .card-volt:hover .card-arrow { background: rgba(123,97,255,0.15); border-color: rgba(123,97,255,0.5); box-shadow: 0 0 12px var(--volt-glow); }
-  .card-pot:hover  .card-arrow { background: rgba(255,97,144,0.15); border-color: rgba(255,97,144,0.5); box-shadow: 0 0 12px var(--pot-glow); }
-  .card-rb:hover   .card-arrow { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25); box-shadow: 0 0 12px rgba(200,150,255,0.3); }
+  .blink{animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
 
-  .card-arrow svg { width: 16px; height: 16px; stroke: var(--muted); stroke-width: 2; fill: none; transition: stroke 0.25s; }
-  .card-volt:hover .card-arrow svg { stroke: var(--volt3); }
-  .card-pot:hover  .card-arrow svg { stroke: var(--pot3); }
-  .card-rb:hover   .card-arrow svg { stroke: #fff; }
+  /* ---------- neofetch ---------- */
+  .fetch-body{display:flex; gap:18px; font-family:var(--mono); font-size:12px; align-items:flex-start;}
+  .fetch-art{color:var(--accent-cyan); white-space:pre; line-height:1.25; font-size:13px; flex:0 0 auto;}
+  .fetch-list{display:flex; flex-direction:column; gap:4px; min-width:0;}
+  .fetch-row{display:flex; gap:8px;}
+  .fetch-key{color:var(--accent-magenta); flex:0 0 70px;}
+  .fetch-val{color:var(--text-primary);}
 
-  /* Footer */
-  footer {
-    position: relative; z-index: 10;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.68rem; color: var(--muted);
-    letter-spacing: 0.08em;
-    animation: fadeUp 0.8s 0.45s ease both;
-    padding-bottom: 2rem;
+  /* ---------- interest cards ---------- */
+  .card{padding:0;}
+  .card .win-body{padding:16px 18px;}
+  .card h3{
+    font-family:var(--display);
+    font-size:15.5px;
+    font-weight:600;
+    color:var(--text-primary);
+    margin-bottom:8px;
   }
-  footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.12); transition: color 0.2s; }
-  footer a:hover { color: #fff; }
+  .card p{
+    font-family:var(--body);
+    font-size:13px;
+    line-height:1.6;
+    color:var(--text-dim);
+  }
+
+  /* ---------- log / now exploring ---------- */
+  .log-line{
+    font-family:var(--mono);
+    font-size:13px;
+    display:flex;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px solid var(--border-line);
+    align-items:baseline;
+  }
+  .log-line:last-child{border-bottom:none;}
+  .log-tag{
+    flex:0 0 76px;
+    font-size:10.5px;
+    padding:2px 6px;
+    border-radius:3px;
+    text-align:center;
+    font-weight:700;
+    letter-spacing:.03em;
+  }
+  .tag-active{background:rgba(94,234,212,0.12); color:var(--accent-cyan); border:1px solid rgba(94,234,212,0.3);}
+  .tag-ongoing{background:rgba(251,191,36,0.12); color:var(--accent-amber); border:1px solid rgba(251,191,36,0.3);}
+  .tag-queued{background:rgba(107,115,148,0.15); color:var(--text-dim); border:1px solid var(--border-line);}
+  .log-text{color:var(--text-primary);}
+  .log-sub{display:block; color:var(--text-dim); font-size:12px; margin-top:2px;}
+
+  /* ---------- connect ---------- */
+  .connect-wrap{display:flex; justify-content:center; align-items:center; height:100%;}
+  .connect-win{width:100%; max-width:480px;}
+  .cmd-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-family:var(--mono);
+    font-size:13px;
+    padding:12px 0;
+    border-bottom:1px solid var(--border-line);
+  }
+  .cmd-row:last-of-type{border-bottom:none;}
+  .cmd-row .cmd{color:var(--text-dim);}
+  .cmd-row .cmd .p{color:var(--accent-cyan);}
+  .cmd-row a{
+    color:var(--accent-magenta);
+    border:1px solid rgba(244,114,182,0.3);
+    padding:4px 10px;
+    border-radius:4px;
+    font-size:12px;
+    transition:background .15s, color .15s;
+  }
+  .cmd-row a:hover{background:var(--accent-magenta); color:var(--bg-void);}
+  .connect-note{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:14px;
+    text-align:center;
+  }
+
+  /* ---------- footer prompt bar ---------- */
+  .promptbar{
+    flex:0 0 auto;
+    height:32px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 16px;
+    font-family:var(--mono);
+    font-size:12px;
+    background:rgba(18,23,42,0.85);
+    border-top:1px solid var(--border-line);
+    color:var(--text-dim);
+  }
+  .promptbar .prompt{color:var(--accent-cyan);}
+  .promptbar .hint{color:var(--text-dim); opacity:.75;}
+
+  /* ---------- boot sequence ---------- */
+  .boot{
+    position:fixed; inset:0; z-index:100;
+    background:var(--bg-void);
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--text-dim);
+    padding:32px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    transition:opacity .5s ease;
+  }
+  .boot .ok{color:var(--accent-cyan);}
+  .boot-line{opacity:0;}
+
+  @media (prefers-reduced-motion: reduce){
+    .blink{animation:none;}
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:880px){
+    body{overflow:auto;}
+    .desktop{height:auto; min-height:100vh;}
+    .bar{position:sticky; top:0; z-index:20; flex-wrap:wrap; height:auto; padding:8px 12px; gap:6px;}
+    .screen{overflow:visible; padding:12px;}
+    .grid-about{grid-template-columns:1fr; height:auto;}
+    .col-stack{grid-template-rows:auto auto; height:auto;}
+    .grid-cards{grid-template-columns:1fr; grid-template-rows:none; height:auto;}
+    .win{min-height:180px;}
+    .win-body{max-height:none;}
+    .promptbar{position:static;}
+    .fetch-body{flex-direction:column;}
+  }
 </style>
 </head>
 <body>
 
-<div id="cursor"></div>
-<div id="cursor-ring"></div>
-<canvas id="bg"></canvas>
-<div class="hex-field" id="hexField"></div>
+<div class="scan" aria-hidden="true"></div>
 
-<main>
-  <section class="hero">
-    <div class="hero-tag">yenkgg &nbsp;·&nbsp; personal projects</div>
-    <h1 class="hero-title">hey, i'm<br><span class="grad">yenkgg</span></h1>
-    <p class="hero-sub">small tiktok creator.<br>these are the things i build.</p>
-  </section>
+<div class="boot" id="boot" aria-hidden="true">
+  <div class="boot-line">[ <span class="ok">OK</span> ] mounting curiosity://</div>
+  <div class="boot-line">[ <span class="ok">OK</span> ] loading interests.conf</div>
+  <div class="boot-line">[ <span class="ok">OK</span> ] starting troubleshooting.service</div>
+  <div class="boot-line">[ <span class="ok">OK</span> ] compiling about-me ... 0 errors</div>
+  <div class="boot-line">[ <span class="ok">OK</span> ] welcome back</div>
+</div>
 
-  <div class="cards">
+<div class="desktop">
 
-    <a class="card card-volt" href="https://yenkgg.github.io/volt" target="_blank" rel="noopener">
-      <div class="card-left">
-        <span class="card-num">01 ——</span>
-        <span class="card-name">Volt</span>
-        <span class="card-url">.gg/voltbz</span>
+  <header class="bar">
+    <nav class="workspaces" role="tablist" aria-label="Sections">
+      <button class="ws-btn" role="tab" aria-selected="true" data-ws="1">1 <span>whoami</span></button>
+      <button class="ws-btn" role="tab" aria-selected="false" data-ws="2">2 <span>stack</span></button>
+      <button class="ws-btn" role="tab" aria-selected="false" data-ws="3">3 <span>projects</span></button>
+      <button class="ws-btn" role="tab" aria-selected="false" data-ws="4">4 <span>now</span></button>
+      <button class="ws-btn" role="tab" aria-selected="false" data-ws="5">5 <span>connect</span></button>
+    </nav>
+    <div class="bar-right">
+      <span><span class="status-dot"></span>online</span>
+      <span class="clock" id="clock">00:00:00</span>
+    </div>
+  </header>
+
+  <main class="screen">
+
+    <!-- workspace 1: whoami -->
+    <section class="ws-panel" data-ws="1">
+      <div class="grid grid-about">
+
+        <div class="win readme">
+          <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>~/README.md</div>
+          <div class="win-body">
+            <p>I'm a student who can't leave a system alone until I understand exactly how it works. Operating systems, custom software, weird bugs, emerging tech — if it has settings to tweak or a problem to solve, I'm in.</p>
+            <p>That curiosity rarely stays in one lane. It pulls me through computer hardware, programming, gaming, and the corners of internet culture where communities form around shared obsessions. I'd rather find the practical fix than memorize the theory, though I usually end up doing both.</p>
+            <p>I care about creativity, continuous learning, and staying adaptable — experimenting with new tools, taking part in online communities, and chipping away at personal projects whenever curiosity points somewhere new.</p>
+            <div class="tag-row">
+              <span class="tag">#tinkerer</span>
+              <span class="tag">#problem-solver</span>
+              <span class="tag">#lifelong-student</span>
+              <span class="tag">#always-curious</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-stack">
+          <div class="win">
+            <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>~ — zsh</div>
+            <div class="win-body term-body" id="termBody"></div>
+          </div>
+
+          <div class="win">
+            <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>neofetch</div>
+            <div class="win-body fetch-body">
+              <pre class="fetch-art">  ╭──────╮
+ ╱        ╲
+│  ◉    ◉  │
+│    ──    │
+ ╲        ╱
+  ╰──────╯</pre>
+              <div class="fetch-list">
+                <div class="fetch-row"><span class="fetch-key">OS</span><span class="fetch-val">Curiosity OS (rolling release)</span></div>
+                <div class="fetch-row"><span class="fetch-key">Shell</span><span class="fetch-val">try-anything-once</span></div>
+                <div class="fetch-row"><span class="fetch-key">WM</span><span class="fetch-val">tiling, minimal distractions</span></div>
+                <div class="fetch-row"><span class="fetch-key">Uptime</span><span class="fetch-val">years, and counting</span></div>
+                <div class="fetch-row"><span class="fetch-key">Packages</span><span class="fetch-val">too many tabs open</span></div>
+                <div class="fetch-row"><span class="fetch-key">CPU</span><span class="fetch-val">problem-solver, all cores</span></div>
+                <div class="fetch-row"><span class="fetch-key">Memory</span><span class="fetch-val">half-finished side projects</span></div>
+                <div class="fetch-row"><span class="fetch-key">Status</span><span class="fetch-val">always learning</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div class="card-arrow">
-        <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-    </a>
+    </section>
 
-    <a class="card card-pot" href="https://yenkgg.github.io/potassium" target="_blank" rel="noopener">
-      <div class="card-left">
-        <span class="card-num">02 ——</span>
-        <span class="card-name">Potassium</span>
-        <span class="card-url">.gg/potassium</span>
+    <!-- workspace 2: stack -->
+    <section class="ws-panel" data-ws="2" hidden>
+      <div class="grid grid-cards">
+        <div class="win card">
+          <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>systems.conf</div>
+          <div class="win-body">
+            <h3>Systems &amp; Software</h3>
+            <p>Operating systems, customization, and the kind of troubleshooting that starts with "it should just work" and ends a few hours later with a fix nobody else needed.</p>
+          </div>
+        </div>
+        <div class="win card">
+          <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>hardware.log</div>
+          <div class="win-body">
+            <h3>Hardware &amp; Builds</h3>
+            <p>Curious about what's actually inside the box — components, builds, and how hardware decisions shape everything that runs on top of them.</p>
+          </div>
+        </div>
+        <div class="win card">
+          <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>code.sh</div>
+          <div class="win-body">
+            <h3>Programming &amp; Problem-Solving</h3>
+            <p>Less interested in syntax for its own sake, more interested in turning a stuck problem into something that actually works.</p>
+          </div>
+        </div>
+        <div class="win card">
+          <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>culture.feed</div>
+          <div class="win-body">
+            <h3>Gaming &amp; Internet Culture</h3>
+            <p>Communities, trends, and the fast-moving culture of the internet — explored as both a player and a participant.</p>
+          </div>
+        </div>
       </div>
-      <div class="card-arrow">
-        <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-    </a>
+    </section>
 
-    <a class="card card-rb" href="https://yenkgg.github.io/enhancements" target="_blank" rel="noopener">
-      <div class="card-left">
-        <span class="card-num">03 ——</span>
-        <span class="card-name">Unnamed Enhancements</span>
-        <span class="card-url">.gg/enhancements</span>
+    
+    <!-- workspace 3: projects -->
+    <section class="ws-panel" data-ws="3" hidden>
+      <div class="win" style="height:100%;">
+        <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>~/projects</div>
+        <div class="win-body">
+          <div class="log-line">
+            <span class="log-tag tag-active">01</span>
+            <span class="log-text"><a href="https://yenkgg.github.io/volt" target="_blank">Volt</a><span class="log-sub">https://yenkgg.github.io/volt</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-tag tag-ongoing">02</span>
+            <span class="log-text"><a href="https://yenkgg.github.io/potassium" target="_blank">Potassium</a><span class="log-sub">https://yenkgg.github.io/potassium</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-tag tag-active">03</span>
+            <span class="log-text"><a href="https://yenkgg.github.io/enhancements" target="_blank">Unnamed Enhancements</a><span class="log-sub">https://yenkgg.github.io/enhancements</span></span>
+          </div>
+        </div>
       </div>
-      <div class="card-arrow">
-        <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </section>
+
+
+    <!-- workspace 4: now -->
+    <section class="ws-panel" data-ws="4" hidden>
+      <div class="win" style="height:100%;">
+        <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>system.log — currently exploring</div>
+        <div class="win-body">
+          <div class="log-line">
+            <span class="log-tag tag-active">ACTIVE</span>
+            <span class="log-text">Emerging technology<span class="log-sub">whatever's new this month — that's usually where I end up</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-tag tag-active">ACTIVE</span>
+            <span class="log-text">Digital communities<span class="log-sub">following the spaces where people gather around shared interests</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-tag tag-ongoing">ONGOING</span>
+            <span class="log-text">OS &amp; hardware tinkering<span class="log-sub">the project that's never quite finished, on purpose</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-tag tag-queued">QUEUED</span>
+            <span class="log-text">Next subject: TBD<span class="log-sub">undecided is the fun part</span></span>
+          </div>
+        </div>
       </div>
-    </a>
+    </section>
 
-  </div>
+    <!-- workspace 5: connect -->
+    <section class="ws-panel" data-ws="5" hidden>
+      <div class="connect-wrap">
+        <div class="win connect-win">
+          <div class="win-titlebar"><span class="dots"><span></span><span></span><span></span></span>~/connect — zsh</div>
+          <div class="win-body">
+            <div class="cmd-row"><span class="cmd"><span class="p">$</span> send mail</span><a href="mailto:lmao@evil.st">Email</a></div>
+            <div class="cmd-row"><span class="cmd"><span class="p">$</span> open tiktok</span><a href="https://tiktok.com/@yenkgg" target="_blank" rel="noopener">TikTok</a></div>
+            <p class="connect-note">// lmao@evil.st · @yenkgg</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <footer>made by <a href="https://github.com/yenkgg" target="_blank" rel="noopener">yenkgg</a></footer>
-</main>
+  </main>
+
+  <footer class="promptbar">
+    <span class="prompt">guest@aboutme:~$</span>
+    <span class="hint">press 1–4 or click a tab above to switch workspaces</span>
+    <span class="blink">_</span>
+  </footer>
+
+</div>
 
 <script>
-/* ── Custom cursor ── */
-const cur  = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove', e => {
-  mx=e.clientX; my=e.clientY;
-  cur.style.left=mx+'px'; cur.style.top=my+'px';
-});
-(function animRing(){
-  rx+=(mx-rx)*0.12; ry+=(my-ry)*0.12;
-  ring.style.left=rx+'px'; ring.style.top=ry+'px';
-  requestAnimationFrame(animRing);
-})();
-document.querySelectorAll('a').forEach(el=>{
-  el.addEventListener('mouseenter',()=>{ cur.style.width='20px'; cur.style.height='20px'; });
-  el.addEventListener('mouseleave',()=>{ cur.style.width='12px'; cur.style.height='12px'; });
-});
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ── Interactive mouse-reactive grid canvas ── */
-const canvas=document.getElementById('bg');
-const ctx=canvas.getContext('2d');
-let W,H,pts=[];
-function resize(){
-  W=canvas.width=window.innerWidth;
-  H=canvas.height=window.innerHeight;
-  pts=[];
-  const cols=Math.ceil(W/80)+1, rows=Math.ceil(H/80)+1;
-  for(let i=0;i<cols;i++) for(let j=0;j<rows;j++){
-    pts.push({x:i*80,y:j*80,ox:i*80,oy:j*80,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3});
+  // clock
+  function pad(n){return n.toString().padStart(2,'0');}
+  function tick(){
+    var d = new Date();
+    document.getElementById('clock').textContent =
+      pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
   }
-}
-resize();
-window.addEventListener('resize',resize);
-let mouseX=0,mouseY=0;
-document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;});
+  tick();
+  setInterval(tick, 1000);
 
-/* rainbow colour cycle for grid lines near cursor */
-function rainbowAt(t){
-  const hue=(t*360)%360;
-  return `hsl(${hue},100%,65%)`;
-}
-
-function drawFrame(t){
-  ctx.clearRect(0,0,W,H);
-  const cols=Math.ceil(W/80)+1;
-  pts.forEach(p=>{
-    const dx=mouseX-p.x, dy=mouseY-p.y, dist=Math.hypot(dx,dy);
-    if(dist<220){ p.vx-=dx/dist*.18; p.vy-=dy/dist*.18; }
-    p.vx+=(p.ox-p.x)*.02; p.vy+=(p.oy-p.y)*.02;
-    p.vx*=.92; p.vy*=.92;
-    p.x+=p.vx; p.y+=p.vy;
+  // workspace switching
+  var tabs = document.querySelectorAll('.ws-btn');
+  var panels = document.querySelectorAll('.ws-panel');
+  function showWs(n){
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.dataset.ws === n ? 'true':'false'); });
+    panels.forEach(function(p){ p.hidden = p.dataset.ws !== n; });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ showWs(t.dataset.ws); });
   });
-  ctx.lineWidth=0.5;
-  for(let i=0;i<pts.length;i++){
-    const p=pts[i];
-    const dMouse=Math.hypot(mouseX-p.x,mouseY-p.y);
-    const factor=Math.max(0,1-dMouse/280);
-    if((i+1)%cols!==0 && i+1<pts.length){
-      const q=pts[i+1];
-      if(factor>0.05){
-        ctx.strokeStyle=`hsla(${(t*.02+(i*7))%360},90%,65%,${factor*0.5})`;
-      } else {
-        ctx.strokeStyle=`rgba(123,97,255,${0.03+(factor)*0.1})`;
-      }
-      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke();
-    }
-    if(i+cols<pts.length){
-      const q=pts[i+cols];
-      if(factor>0.05){
-        ctx.strokeStyle=`hsla(${(t*.02+(i*7)+60)%360},90%,65%,${factor*0.5})`;
-      } else {
-        ctx.strokeStyle=`rgba(123,97,255,${0.03+(factor)*0.1})`;
-      }
-      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke();
-    }
-    if(dMouse<280){
-      const hue=(t*.05+(i*11))%360;
-      ctx.fillStyle=`hsla(${hue},100%,70%,${factor*.6})`;
-      ctx.beginPath(); ctx.arc(p.x,p.y,1.8,0,Math.PI*2); ctx.fill();
-    }
-  }
-  requestAnimationFrame(drawFrame);
-}
-requestAnimationFrame(t=>drawFrame(t));
+  document.addEventListener('keydown', function(e){
+    if(['1','2','3','4','5'].includes(e.key)) showWs(e.key);
+  });
 
-/* ── Floating hexagons ── */
-const hexField=document.getElementById('hexField');
-const hexColors=[
-  ['rgba(123,97,255,0.12)','rgba(123,97,255,0.2)'],   // purple
-  ['rgba(255,97,144,0.12)','rgba(255,97,144,0.2)'],   // rose
-  ['rgba(77,255,160,0.08)','rgba(77,255,160,0.15)'],  // green
-  ['rgba(77,184,255,0.08)','rgba(77,184,255,0.15)'],  // blue
-  ['rgba(255,233,77,0.07)','rgba(255,200,77,0.12)'],  // yellow
-];
-for(let i=0;i<20;i++){
-  const h=document.createElement('div');
-  h.className='hex';
-  const size=35+Math.random()*80;
-  const [bg,border]=hexColors[i%hexColors.length];
-  h.style.cssText=`
-    left:${Math.random()*100}%;
-    top:${Math.random()*100}%;
-    width:${size}px;
-    height:${size*1.15}px;
-    background:${bg};
-    border:1px solid ${border};
-    --rx:${-20+Math.random()*40}deg;
-    --ry:${-30+Math.random()*60}deg;
-    --dur:${5+Math.random()*9}s;
-    --delay:${-Math.random()*9}s;
-    --op:${0.08+Math.random()*0.25};
-    opacity:${0.08+Math.random()*0.25};
-  `;
-  hexField.appendChild(h);
-}
+  // terminal typing effect
+  var lines = [
+    {p:true,  text:'whoami'},
+    {out:true, text:'a student majoring in "how does this actually work"'},
+    {p:true,  text:'ls ./skills'},
+    {out:true, text:'operating-systems/  troubleshooting/  programming/  hardware/  gaming/  internet-culture/'},
+    {p:true,  text:'cat status'},
+    {out:true, text:'compiling new interests... 0 errors, infinite warnings'}
+  ];
+  var term = document.getElementById('termBody');
+
+  function renderStatic(){
+    term.innerHTML = lines.map(function(l){
+      return l.p
+        ? '<div class="term-line"><span class="p">$</span> '+l.text+'</div>'
+        : '<div class="term-out">'+l.text+'</div>';
+    }).join('');
+  }
+
+  function typeLines(){
+    var i = 0;
+    function next(){
+      if(i >= lines.length){ return; }
+      var l = lines[i];
+      var div = document.createElement('div');
+      div.className = l.p ? 'term-line' : 'term-out';
+      term.appendChild(div);
+      var prefix = l.p ? '$ ' : '';
+      var full = prefix + l.text;
+      var j = 0;
+      var speed = l.p ? 28 : 8;
+      (function type(){
+        if(j <= full.length){
+          div.textContent = full.slice(0, j);
+          j++;
+          setTimeout(type, speed);
+        } else {
+          i++;
+          setTimeout(next, l.p ? 120 : 260);
+        }
+      })();
+    }
+    next();
+  }
+
+  // boot sequence
+  var boot = document.getElementById('boot');
+  var bootLines = boot.querySelectorAll('.boot-line');
+
+  function finishBoot(){
+    boot.style.opacity = '0';
+    setTimeout(function(){ boot.style.display='none'; }, 500);
+    if(reduceMotion){ renderStatic(); } else { typeLines(); }
+  }
+
+  if(reduceMotion){
+    boot.style.display = 'none';
+    renderStatic();
+  } else {
+    bootLines.forEach(function(line, idx){
+      setTimeout(function(){ line.style.opacity = '1'; }, idx * 260);
+    });
+    setTimeout(finishBoot, bootLines.length * 260 + 350);
+  }
+})();
 </script>
+
 </body>
 </html>
